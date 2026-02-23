@@ -1,283 +1,96 @@
-# APO v2 — Autonomous Privacy Observability
+# APO v2 — Autonomous Privacy Observability Platform
 
-> **What this is in one sentence:**
-> An automated tool that visits any website like a real user, tests whether the site respects privacy choices (cookie consent, GPC opt-out), and produces a legal evidence report citing exact CCPA / GDPR violations and fines.
-
----
-
-## 📁 Folder Structure
-
-Everything lives inside `apo_v2/`. The **backend** (Python/FastAPI) and the **frontend** (React) are both here.
-
-```
-apo_v2/
-│
-├── backend.py              ← FastAPI server — the bridge between UI and pipeline
-├── main.py                 ← CLI entry point (run without a UI)
-├── proxy_addon.py          ← mitmproxy plugin to capture raw network traffic
-├── rules.sql               ← All CCPA & GDPR rules stored as SQL (25 rules)
-├── requirements.txt        ← Python packages needed
-├── .env.template           ← Copy this to .env and add your API keys
-│
-├── agents/                 ← The 3-tier pipeline (runs the actual scan)
-│   ├── tier1_discovery.py  ← Crawls the website, maps all pages
-│   ├── tier2_interaction.py← Opens browser, runs 4 sessions, records traffic
-│   └── tier3_observability.py ← Checks rules, generates violation report
-│
-├── core/                   ← Shared utilities used by all agents
-│   ├── config.py           ← All settings in one place (URL, jurisdiction, etc.)
-│   ├── llm_router.py       ← Calls Claude / GPT-4o with auto-fallback
-│   ├── rules_db.py         ← Loads rules.sql into SQLite for fast lookup
-│   └── tools.py            ← Browser tools (navigate, scroll, detect banners, etc.)
-│
-├── apo/                    ← React frontend (the web UI)
-│   ├── src/
-│   │   ├── pages/          ← Main scan page
-│   │   ├── components/     ← UI blocks: ScanForm, TerminalLog, ViolationsTable, etc.
-│   │   └── lib/api.ts      ← Calls backend API endpoints
-│   ├── package.json
-│   └── index.html
-│
-└── output/                 ← All scan results are saved here (auto-created)
-    ├── interaction_graph.json      ← Map of all pages crawled
-    ├── traffic_baseline.json       ← Network requests (no consent action)
-    ├── traffic_compliance.json     ← Network requests (GPC signal ON)
-    ├── session_state_baseline.json ← Cookies & storage from baseline
-    ├── session_state_compliance.json
-    ├── raw_traffic_proxy.jsonl     ← Deep traffic capture via mitmproxy
-    └── evidence_report.json        ← ✅ Final violation report (what the UI shows)
-```
+> **The Platform in one sentence:**
+> A full-stack automated compliance engine that scans websites, simulates privacy decisions (Accept/Reject/GPC), and produces a legal evidence report with exact CCPA/GDPR violations—backed by a Cloud persistence layer (Supabase).
 
 ---
 
-## 🔄 How It Works — The Full Pipeline
+## 🏗️ Architecture: The 3-Tier Pipeline
 
-When a user submits a scan from the UI (or CLI), this is what happens step by step:
+APO v2 operates as a high-performance assembly line distributed across **FastAPI** (Logic) and **Supabase** (Persistence).
 
-```
-User enters URL + settings in the React UI
-           │
-           ▼
-    POST /api/scan  →  backend.py
-           │
-           ▼
-    ┌──────────────────────────────────────────────┐
-    │  TIER 1 — Discovery Agent                    │
-    │  tier1_discovery.py                          │
-    │                                              │
-    │  • Opens a browser with Playwright           │
-    │  • Visits the target URL                     │
-    │  • Finds all links, forms, buttons           │
-    │  • Uses Claude AI to score each page's       │
-    │    privacy risk (1–10)                       │
-    │  • Saves a map of every page found           │
-    │  → Outputs: interaction_graph.json           │
-    └──────────────────┬───────────────────────────┘
-                       │
-                       ▼
-    ┌──────────────────────────────────────────────┐
-    │  TIER 2 — Interaction Agent                  │
-    │  tier2_interaction.py                        │
-    │                                              │
-    │  Runs 4 browser sessions (in order):         │
-    │                                              │
-    │  1. BASELINE      — visits with no action    │
-    │  2. CONSENT ACCEPT — clicks "Accept All"     │
-    │  3. CONSENT DECLINE — clicks "No Thanks"     │
-    │  4. GPC COMPLIANCE — sends Sec-GPC: 1 header │
-    │                                              │
-    │  Each session records every network request: │
-    │  • Which tracker companies were called?      │
-    │  • Was PII (email, location) sent?           │
-    │  • Did trackers still fire after "No Thanks"?│
-    │  • Did trackers fire before the user could   │
-    │    even see the consent banner?              │
-    │                                              │
-    │  → Outputs: traffic_*.json, session_*.json   │
-    └──────────────────┬───────────────────────────┘
-                       │
-                       ▼
-    ┌──────────────────────────────────────────────┐
-    │  TIER 3 — Observability Agent                │
-    │  tier3_observability.py                      │
-    │                                              │
-    │  Loads all 25 CCPA + GDPR rules from DB      │
-    │  Runs each rule detector:                    │
-    │                                              │
-    │  CCPA checks:                                │
-    │  ✓ GPC signal not honored?                   │
-    │  ✓ "Do Not Sell" link missing?               │
-    │  ✓ No cookie/consent banner?                 │
-    │  ✓ PII in tracker requests?                  │
-    │  ✓ Sensitive data (health, finance) exposed? │
-    │  ✓ No privacy policy page?                   │
-    │  ✓ Consent wall (service gated behind Accept)?│
-    │  ✓ Trackers active right after opt-out?      │
-    │                                              │
-    │  GDPR checks:                                │
-    │  ✓ Trackers loading before user sees banner? │
-    │  ✓ Cross-site tracking identifiers present?  │
-    │  ✓ Device fingerprinting detected?           │
-    │  ✓ Decline option absent or hidden?          │
-    │  ✓ Accept and Decline have same tracker load?│
-    │  ✓ No transparency disclosure page?          │
-    │  ✓ No erasure / "delete my data" mechanism? │
-    │  ✓ Marketing trackers still firing after     │
-    │    objection? (Art. 21 — absolute right)     │
-    │  ✓ Automated profiling services detected?    │
-    │  ✓ PII sent to US servers without SCCs?      │
-    │                                              │
-    │  Uses GPT-4o to write plain-English          │
-    │  explanations and fix recommendations        │
-    │  for each violation found.                   │
-    │                                              │
-    │  → Outputs: evidence_report.json             │
-    └──────────────────────────────────────────────┘
-                       │
-                       ▼
-    Results stream back to the React UI via SSE
-    (GET /api/stream/{scan_id})
-    Final report shown in the Violations table
-```
+### 🛡️ Tier 1: Discovery Agent (The Map)
+*   **Action:** Crawls the target URL to find all interactive nodes (links, forms, banners).
+*   **AI Logic (Claude):** Assigns a **Privacy Risk Score (1-10)** to every page found.
+*   **Persistence:** Saves the **Interaction Graph** to Supabase Storage.
+
+### 🔬 Tier 2: Interaction Agent (The Capture)
+*   **Action:** Launches **Parallel Browsers** (Playwright) to simulate different user personas:
+    1.  **Baseline Session:** Acts as a standard user (No privacy signals).
+    2.  **Compliance Session:** Acts as a "Hard Privacy" user (Injects GPC signal + clicks "Reject All").
+*   **Observation:** Uses **mitmproxy** to capture deep network traffic and detect tracking pixels, XHR leaks, and temporal data escapes.
+*   **Persistence:** Uploads raw traffic logs (`traffic_*.json`) and browser snapshots (`session_state_*.json`) to Supabase Storage.
+
+### ⚖️ Tier 3: Observability Agent (The Verdict)
+*   **Action:** Compares the Baseline vs. Compliance session data.
+*   **Logic:** If a tracker fires in the "Privacy" session that was also in the "Baseline," it’s a high-confidence violation.
+*   **AI Scoring (GPT-4o):** Matches findings against **rules.sql** (CCPA/GDPR sections) to generate legal explanations and penalty estimates.
+*   **Persistence:** Writes structured findings to the `violations` table in Supabase.
 
 ---
 
-## 🔌 API Endpoints (backend.py)
+## 🗄️ Persistence Layer: Supabase
 
-| Endpoint | Method | What it does |
+APO v2 uses a hybrid storage model to ensure speed, searchability, and legal auditability.
+
+### 1. Structured Data (Tables)
+We use **PostgREST** (Supabase's auto-API) to drive the dashboard UI.
+*   **`scans`:** Tracks every scan job, its URL, status, and progress.
+*   **`scan_events`:** Powers the **Live Terminal** in the UI by storing second-by-second logs.
+*   **`violations`:** Stores the final "crimes" found, including severity and estimated penalties.
+
+### 2. Raw Evidence (Storage)
+We use **Supabase Storage** for the "Legal proof."
+*   **Folders by `scan_id`:** Every scan gets its own isolated folder.
+*   **Files:** `evidence_report.json`, `traffic_baseline.json`, `interaction_graph.json`.
+*   **Audit Trail:** These files are the "Digital Tapes" that can be downloaded for legal disputes.
+
+---
+
+## 🔌 API & Integration
+
+### FastAPI Backend (`backend.py`)
+| Endpoint | Method | Role |
 |---|---|---|
-| `/api/scan` | POST | Start a new scan, returns `scan_id` |
-| `/api/stream/{scan_id}` | GET | Live log stream (Server-Sent Events) |
-| `/api/status/{scan_id}` | GET | Check progress % of each tier |
-| `/api/results/{scan_id}` | GET | Get the final `evidence_report.json` |
-| `/api/download/{filename}` | GET | Download any output file |
-| `/health` | GET | Check if backend is alive |
+| `/api/scan` | POST | Generates `scan_id`, starts browsers, and initializes Supabase records. |
+| `/api/stream/{id}`| GET | Streams logs from memory/DB to the UI via Server-Sent Events (SSE). |
+| `/api/results/{id}`| GET | Fetches the final AI-generated compliance verdict. |
+
+### Supabase Cloud API (PostgREST)
+You can hit the database directly for analytics (e.g., using Postman/Thunder Client):
+*   **URL:** `https://[id].supabase.co/rest/v1/violations?scan_id=eq.[id]`
+*   **Headers:** `apikey` and `Authorization: Bearer [token]`
 
 ---
 
-## 🗄️ rules.sql — The Legal Database
+## ▶️ Setup & Usage
 
-Contains **25 official rules** from CCPA and GDPR, each with:
-- Rule ID (e.g. `CCPA-1798.120`, `GDPR-Art7.3`)
-- Official section citation
-- Full rule text
-- Minimum and maximum fine amounts (in USD / EUR)
+### 1. Environment Configuration
+Copy `.env.template` to `.env` and configure:
+```env
+# AI Keys
+ANTHROPIC_API_KEY=sk-ant...
+OPENAI_API_KEY=sk-proj...
 
-These are loaded into SQLite at scan time and matched against what was observed in Tier 2.
-
----
-
-## ▶️ How to Run
-
-### Step 1 — Set up Python environment (first time only)
-```bash
-cd apo_v2
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
+# Supabase Keys (from Project Settings -> API)
+SUPABASE_URL=https://your-id.supabase.co
+SUPABASE_KEY=your-anon-key
+SUPABASE_SERVICE_KEY=your-service-role-key  # Required for storage uploads
 ```
 
-### Step 2 — Add API keys (optional but recommended)
+### 2. Starting the Platform
 ```bash
-cp .env.template .env
-# Edit .env and add:
-# ANTHROPIC_API_KEY=sk-ant-...
-# OPENAI_API_KEY=sk-...
-```
-> Without API keys, the tool still works — it skips AI analysis but runs all rule-based checks.
-
-### Step 3 — Start the backend
-```bash
-# Terminal 1
-cd apo_v2
+# Terminal 1: Backend
 source venv/bin/activate
 python backend.py
-# → Running on http://localhost:8000
-```
 
-### Step 4 — Start the frontend
-```bash
-# Terminal 2
-cd apo_v2/apo
-npm install   # first time only
-npm run dev
-# → Running on http://localhost:5173
-```
-
-### Step 5 — Open the app
-Go to **http://localhost:5173** in your browser, enter a URL, choose CCPA or GDPR, and click **Scan**.
-
----
-
-### CLI mode (no UI needed)
-```bash
-cd apo_v2
-source venv/bin/activate
-python main.py --url https://www.example.com
-python main.py --url https://www.example.com --skip-discovery  # reuse last crawl
+# Terminal 2: Frontend
+cd apo && npm run dev
 ```
 
 ---
 
-## 📊 What the Evidence Report Contains
-
-`output/evidence_report.json` is structured like this:
-
-```json
-{
-  "report_metadata": { "target", "jurisdiction", "generated_at" },
-  "session_summary": {
-    "baseline":          { "pages_visited": 5, "tracker_count": 40 },
-    "consent_accepted":  { "pages_visited": 5, "tracker_count": 43 },
-    "consent_declined":  { "pages_visited": 5, "tracker_count": 38 },
-    "compliance_gpc_on": { "pages_visited": 5, "tracker_count": 35 }
-  },
-  "gpc_verdict": { "verdict": "NON-COMPLIANT", "domains_ignoring_gpc": ["..."] },
-  "violation_summary": {
-    "total": 6,
-    "severity_breakdown": { "HIGH": 4, "MEDIUM": 2, "LOW": 0 },
-    "max_potential_penalty_usd": 150000
-  },
-  "violations": [
-    {
-      "rule_id": "CCPA-1798.135b",
-      "section": "§1798.135(b)(1)",
-      "violation_type": "GPC_NOT_HONORED",
-      "severity": "HIGH",
-      "evidence": { "tracker_domains": ["doubleclick.net", "..."] },
-      "penalty_min_usd": 2500,
-      "penalty_max_usd": 7500,
-      "recommendation": "When Sec-GPC: 1 is received, stop all third-party tracker calls.",
-      "llm_explanation": "Plain English explanation for non-lawyers...",
-      "llm_technical_fix": "Exact code change engineers need to make..."
-    }
-  ]
-}
-```
-
----
-
-## 🧠 AI Integration
-
-| Where | Model | What it does |
-|---|---|---|
-| Tier 1 | Claude | Scores each crawled page for privacy risk (1–10), picks priority pages to visit next |
-| Tier 2 | Claude | Plans which pages to focus the scan on; writes per-page compliance observations |
-| Tier 3 | Claude | Reads the privacy policy and checks for required disclosures |
-| Tier 3 | GPT-4o | Writes plain-English explanations and technical fix instructions for each violation |
-
-If no API keys are provided, all AI steps are skipped and only the rule-based detectors run.
-
----
-
-## ⚙️ Key Settings (core/config.py)
-
-| Setting | Default | Description |
-|---|---|---|
-| `ROOT_URL` | set by UI | The website to scan |
-| `JURISDICTION` | `CCPA` | Which law to check against (`CCPA` or `GDPR`) |
-| `MAX_PAGES` | `10` | How many pages to crawl (UI slider × 5) |
-| `HEADLESS` | `True` | Set `False` to watch the browser as it scans |
-| `SCROLL_STEPS` | `3` | How many times to scroll per page (triggers lazy trackers) |
-| `TEMPORAL_LEAK_MS` | `500` | Trackers firing within this many ms of page load = violation |
+## 📊 Evaluation Logic (Simple Terms)
+*   **"Is Tracker":** Domain matched against a blocklist of 12,000+ known ad-tech partners.
+*   **"GPC Verdict":** Proves if GPC signals were ignored (Domain in Baseline AND Domain in Compliance = VIOLATION).
+*   **"Penalty Calculation":** Sourced from the `rules.sql` local database citing exact CCPA (§1798.135) or GDPR (Art. 21) sections.
