@@ -29,6 +29,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
+# ── Supabase integration (non-blocking, optional) ─────────────────────────────
+try:
+    from core.supabase_store import (
+        create_scan, update_scan_status,
+        push_event as _sb_push_event, save_violations, upload_file, save_scan_result
+    )
+    SUPABASE_ENABLED = True
+except Exception as _sb_err:
+    SUPABASE_ENABLED = False
+    print(f"[WARNING] Supabase not available: {_sb_err}")
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 BASE_DIR    = Path(__file__).parent
 OUTPUT_DIR  = BASE_DIR / "output"
@@ -63,7 +74,7 @@ class ScanRequest(BaseModel):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _emit(scan_id: str, agent: str, level: str, msg: str):
-    """Push a log event into the scan registry."""
+    """Push a log event into the scan registry AND Supabase."""
     event = {
         "timestamp": time.strftime("%H:%M:%S"),
         "agent": agent,
@@ -71,11 +82,24 @@ def _emit(scan_id: str, agent: str, level: str, msg: str):
         "msg": msg,
     }
     SCANS[scan_id]["events"].append(event)
+    if SUPABASE_ENABLED:
+        try:
+            _sb_push_event(scan_id, agent, level, msg)
+        except Exception:
+            pass
 
 
 def _set_phase(scan_id: str, phase: str, progress: int):
     SCANS[scan_id]["phase"] = phase
     SCANS[scan_id]["progress"][phase] = progress
+    if SUPABASE_ENABLED:
+        try:
+            update_scan_status(
+                scan_id, SCANS[scan_id]["status"],
+                phase=phase, progress=SCANS[scan_id]["progress"]
+            )
+        except Exception:
+            pass
 
 
 # ── Background scan runner ─────────────────────────────────────────────────────
@@ -208,6 +232,19 @@ def _run_scan(scan_id: str, req: ScanRequest):
         scan["result"] = report
         scan["status"] = "complete"
 
+        # ── Push everything to Supabase ──────────────────────────────
+        if SUPABASE_ENABLED:
+            try:
+                save_violations(scan_id, violations)
+                upload_file(scan_id, "evidence_report.json", report)
+                baseline_log = session_results.get("baseline", {}).get("traffic_log", [])
+                compliance_log = session_results.get("compliance", {}).get("traffic_log", [])
+                upload_file(scan_id, "traffic_baseline.json", baseline_log)
+                upload_file(scan_id, "traffic_compliance.json", compliance_log)
+                save_scan_result(scan_id, report)
+            except Exception as sb_err:
+                print(f"[Supabase] post-scan upload error: {sb_err}")
+
     except Exception as exc:
         _emit(scan_id, "observability", "ERROR", f"Pipeline error: {exc}")
         scan["status"] = "error"
@@ -229,6 +266,12 @@ def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
         "progress": {"discovery": 0, "interaction": 0, "observability": 0},
         "request": req.model_dump(),
     }
+    # Persist to Supabase
+    if SUPABASE_ENABLED:
+        try:
+            create_scan(scan_id, req.url, req.framework)
+        except Exception as e:
+            print(f"[Supabase] create_scan failed: {e}")
     background_tasks.add_task(_run_scan, scan_id, req)
     return {"scan_id": scan_id}
 
