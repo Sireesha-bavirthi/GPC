@@ -232,6 +232,69 @@ async def detect_do_not_sell_link(page: Page) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════════
+# TOOL 10: handle_cookie_consent
+# Actively clicks Accept or Reject based on session type.
+# Baseline session (accept_all=True)  → clicks "Accept All"
+# Compliance session (accept_all=False) → clicks "Reject All"
+# ═══════════════════════════════════════════════════════════════
+async def handle_cookie_consent(page: Page, accept_all: bool = True) -> dict:
+    """
+    Finds and clicks the correct cookie consent button.
+    accept_all=True  → Accept / Allow / Agree  (Baseline session)
+    accept_all=False → Reject / Decline / Necessary only  (Compliance session)
+    """
+    action = "ACCEPT" if accept_all else "REJECT"
+
+    patterns_accept = [
+        "accept all", "allow all", "agree", "accept cookies",
+        "i accept", "allow cookies", "got it", "i agree", "accept"
+    ]
+    patterns_reject = [
+        "reject all", "decline all", "reject", "decline",
+        "necessary only", "only essential", "decline cookies",
+        "no thanks", "save settings"
+    ]
+    target_patterns = patterns_accept if accept_all else patterns_reject
+
+    try:
+        # Pass 1: Match button text
+        elements = await page.query_selector_all("button, a, [role='button']")
+        for el in elements:
+            try:
+                if not await el.is_visible():
+                    continue
+                text = (await el.inner_text()).strip().lower()
+                if not text:
+                    continue
+                if any(p in text for p in target_patterns):
+                    await el.click()
+                    await page.wait_for_timeout(ACTION_DELAY_MS)
+                    return {"status": "ok", "action": action, "button_text": text[:50]}
+            except Exception:
+                continue
+
+        # Pass 2: Fallback CSS selectors
+        selectors_accept = ["#accept-all", ".accept-all", "#cookie-accept",
+                            ".cookie-accept-all", "[id*='accept-all']"]
+        selectors_reject = ["#reject-all", ".reject-all", "#cookie-reject",
+                            ".cookie-reject-all", "[id*='reject-all']"]
+        for sel in (selectors_accept if accept_all else selectors_reject):
+            try:
+                el = await page.query_selector(sel)
+                if el and await el.is_visible():
+                    await el.click()
+                    await page.wait_for_timeout(ACTION_DELAY_MS)
+                    return {"status": "ok", "action": action, "selector": sel}
+            except Exception:
+                continue
+
+        return {"status": "not_found", "action": action,
+                "msg": "No matching cookie consent button found"}
+    except Exception as e:
+        return {"status": "error", "action": action, "msg": str(e)}
+
+
+# ═══════════════════════════════════════════════════════════════
 # TOOL 10: detect_temporal_leak
 # Checks if trackers fired within TEMPORAL_LEAK_MS after a page load
 # ═══════════════════════════════════════════════════════════════

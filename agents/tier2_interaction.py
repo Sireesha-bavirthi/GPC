@@ -35,7 +35,8 @@ from core.config import (
 from core.tools import (
     navigate_to_page, scroll_page, make_traffic_listener,
     save_session_state, detect_cookie_banner,
-    detect_do_not_sell_link, detect_temporal_leak
+    detect_do_not_sell_link, detect_temporal_leak,
+    handle_cookie_consent
 )
 from core.llm_router import call_llm
 
@@ -214,10 +215,16 @@ async def _run_session(browser: Browser, ordered_urls: list,
 
         await scroll_page(page, steps=SCROLL_STEPS)
 
-        # Per-page checks
+        # Detect cookie banner
         banner = await detect_cookie_banner(page)
         dns    = await detect_do_not_sell_link(page)
-        banner_results[url]   = banner
+
+        # Actively click Accept (Baseline) or Reject (Compliance)
+        consent = await handle_cookie_consent(page, accept_all=not gpc_on)
+        if consent["status"] == "ok":
+            print(f"      [consent] {consent['action']} → {consent.get('button_text') or consent.get('selector', '')}")
+
+        banner_results[url]   = {**banner, "consent_action": consent}
         dns_link_results[url] = dns
 
         # Temporal leak (compliance only)
@@ -292,7 +299,7 @@ async def run_interaction_agent(graph: dict) -> dict:
     if plan.get("high_risk_pages"):
         print(f"  High-risk pages flagged by Claude:")
         for p in plan["high_risk_pages"][:3]:
-            print(f"    🔴 {p.get('url','')[:55]} — {p.get('reason','')[:40]}")
+            print(f"     {p.get('url','')[:55]} — {p.get('reason','')[:40]}")
 
     start_time = time.time()
 
