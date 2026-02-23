@@ -1,3 +1,30 @@
-playwright>=1.40.0
-anthropic>=0.20.0
-openai>=1.10.0
+# APO v2 — Python Dependencies
+# Install with: pip install -r requirements.txt
+# Then run:     playwright install chromium
+
+# ── Web Framework & Server ─────────────────────────────────────
+fastapi>=0.115.0
+uvicorn>=0.30.0
+python-multipart>=0.0.9      # for form data parsing
+sse-starlette>=2.0.0         # Server-Sent Events streaming
+
+# ── Browser Automation ─────────────────────────────────────────
+playwright>=1.45.0           # Chromium automation (Tier 1 + Tier 2)
+
+# ── AI / LLM ──────────────────────────────────────────────────
+anthropic>=0.25.0            # Claude API (Tier 1 planning, Tier 3 policy analysis)
+openai>=1.30.0               # GPT-4o (Tier 3 violation classification)
+
+# ── Supabase (DB + Storage) ────────────────────────────────────
+supabase>=2.5.0              # Supabase Python client
+python-dotenv>=1.0.0         # Load credentials from .env file
+
+# ── Proxy Traffic Capture ──────────────────────────────────────
+mitmproxy>=10.0.0            # Deep traffic interception (optional)
+
+# ── HTTP ───────────────────────────────────────────────────────
+httpx>=0.27.0                # Async HTTP client (used by anthropic + supabase)
+requests>=2.31.0             # Sync HTTP (fallback)
+
+# ── Data & Utilities ───────────────────────────────────────────
+pydantic>=2.5.0              # Request/response validation in FastAPI
