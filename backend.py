@@ -157,6 +157,15 @@ def _run_scan(scan_id: str, req: ScanRequest):
         _emit(scan_id, "discovery", "SUCCESS", f"Discovery complete — {pages} pages mapped")
         _set_phase(scan_id, "discovery", 100)
 
+        # ── Upload interaction graph to Supabase Storage ─────────────
+        if SUPABASE_ENABLED and isinstance(graph, dict):
+            try:
+                url = upload_file(scan_id, "interaction_graph.json", graph)
+                _emit(scan_id, "discovery", "INFO",
+                      f"Interaction graph uploaded to Supabase Storage ({pages} nodes)")
+            except Exception as sb_e:
+                print(f"[Supabase] interaction_graph upload failed: {sb_e}")
+
         # ── TIER 2: Interaction ─────────────────────────────────────────────
         _emit(scan_id, "interaction", "INFO", "Launching parallel GPC sessions (baseline + compliance)")
         _set_phase(scan_id, "interaction", 10)
@@ -190,6 +199,21 @@ def _run_scan(scan_id: str, req: ScanRequest):
             session_results = _aio.run(run_interaction_agent(graph))
             _emit(scan_id, "interaction", "SUCCESS", "Both sessions complete — traffic captured")
             _set_phase(scan_id, "interaction", 100)
+
+            # ── Upload session state files to Supabase ────────────────
+            if SUPABASE_ENABLED:
+                try:
+                    from core.config import SESSION_BASELINE_FILE, SESSION_COMPLIANCE_FILE
+                    import json as _json
+                    for fname, fpath in [
+                        ("session_state_baseline.json", SESSION_BASELINE_FILE),
+                        ("session_state_compliance.json", SESSION_COMPLIANCE_FILE),
+                    ]:
+                        if fpath.exists():
+                            upload_file(scan_id, fname, _json.loads(fpath.read_text()))
+                    _emit(scan_id, "interaction", "INFO", "Session state files uploaded to Supabase")
+                except Exception as sb_e:
+                    print(f"[Supabase] session state upload failed: {sb_e}")
         finally:
             if proxy_proc:
                 proxy_proc.terminate()
@@ -328,6 +352,43 @@ def get_results(scan_id: str):
     if scan["status"] != "complete":
         raise HTTPException(425, "Scan not complete yet")
     return scan["result"]
+
+
+@app.get("/api/graph/{scan_id}")
+def get_interaction_graph(scan_id: str):
+    """Fetch interaction_graph.json for a scan from Supabase Storage."""
+    if SUPABASE_ENABLED:
+        try:
+            from core.supabase_client import supabase
+            response = supabase.storage.from_("apo-reports").download(f"{scan_id}/interaction_graph.json")
+            return json.loads(response.decode("utf-8"))
+        except Exception as e:
+            print(f"[Supabase] graph fetch failed: {e} — trying local file")
+    local_path = OUTPUT_DIR / "interaction_graph.json"
+    if local_path.exists():
+        return json.loads(local_path.read_text())
+    raise HTTPException(404, "Interaction graph not found for this scan")
+
+
+@app.get("/api/violations/{scan_id}")
+def get_violations(scan_id: str):
+    """Fetch all violations for a scan from Supabase DB."""
+    if SUPABASE_ENABLED:
+        try:
+            from core.supabase_client import supabase
+            res = (supabase.table("violations")
+                   .select("*")
+                   .eq("scan_id", scan_id)
+                   .order("severity")
+                   .execute())
+            return {"scan_id": scan_id, "violations": res.data, "total": len(res.data)}
+        except Exception as e:
+            print(f"[Supabase] violations fetch failed: {e}")
+    if scan_id in SCANS and SCANS[scan_id].get("result"):
+        violations = SCANS[scan_id]["result"].get("violations", [])
+        return {"scan_id": scan_id, "violations": violations, "total": len(violations)}
+    raise HTTPException(404, "Violations not found for this scan")
+
 
 
 @app.get("/api/download/{filename}")

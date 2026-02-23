@@ -38,11 +38,18 @@ INSERT INTO regulations VALUES
 'Regulation (EU) 2016/679 | Official Source: https://eur-lex.europa.eu/eli/reg/2016/679/oj',
 '2018-05-25', '2018-05-25');
 
+
 -- ============================================================================
--- CCPA OFFICIAL RULES
+-- CCPA + CPRA RULES (COMBINED — ONE AMENDED LAW)
 -- Source: California Civil Code §1798.100-1798.199.100
+-- CPRA effective: January 1, 2023
 -- Official URL: https://leginfo.legislature.ca.gov/faces/codes_displayText.xhtml?division=3.&part=4.&lawCode=CIV&title=1.81.5
+-- CPPA Regulations: https://cppa.ca.gov/regulations/
 -- ============================================================================
+
+-- -----------------------------------------------------------------------
+-- ORIGINAL CCPA RULES (still fully valid, unchanged)
+-- -----------------------------------------------------------------------
 
 -- Section 1798.120 - Right to Opt-Out of Sale/Sharing
 INSERT INTO compliance_rules VALUES 
@@ -68,7 +75,7 @@ INSERT INTO compliance_rules VALUES
 INSERT INTO compliance_rules VALUES 
 ('CCPA-1798.121', 'CCPA', '§1798.121(a)', 
 'Right to Limit Use and Disclosure of Sensitive Personal Information',
-'A consumer shall have the right, at any time, to direct a business that collects sensitive personal information about the consumer to limit its use of the consumer''s sensitive personal information to that use which is necessary to perform the services or provide the goods reasonably expected by an average consumer who requests those goods or services.',
+'A consumer shall have the right, at any time, to direct a business that collects sensitive personal information about the consumer to limit its use of the consumer''s sensitive personal information to that use which is necessary to perform the services or provide the goods reasonably expected by an average consumer who requests those goods or services. Sensitive personal information includes: social security number, driver''s license, state ID or passport number; account log-in credentials; financial account information; precise geolocation; racial or ethnic origin; religious beliefs; union membership; contents of communications; genetic data; biometric data; health data; sex life or sexual orientation data; and personal information of consumers known to be under 16 years old.',
 2500.00, 7500.00, 'Businesses collecting sensitive personal information');
 
 -- Section 1798.100 - Right to Know
@@ -102,7 +109,7 @@ INSERT INTO compliance_rules VALUES
 INSERT INTO compliance_rules VALUES 
 ('CCPA-1798.130a5A', 'CCPA', '§1798.130(a)(5)(A)', 
 'Privacy Policy Must Describe Consumer Rights',
-'A business shall, in its online privacy policy or policies and in any California-specific description of consumers'' privacy rights, describe the consumer''s rights under Sections 1798.100, 1798.105, 1798.110, 1798.115, 1798.120, and 1798.121.',
+'A business shall, in its online privacy policy or policies and in any California-specific description of consumers'' privacy rights, describe the consumer''s rights under Sections 1798.100, 1798.105, 1798.106, 1798.110, 1798.115, 1798.120, and 1798.121, and provide two or more designated methods for submitting requests including at minimum a toll-free telephone number.',
 2500.00, 7500.00, 'All businesses with online presence');
 
 -- Section 1798.140 - Definitions: Sale
@@ -119,8 +126,133 @@ INSERT INTO compliance_rules VALUES
 'A business shall comply with an opt-out request within 15 business days from the date the business receives the request.',
 2500.00, 7500.00, 'All businesses receiving opt-out requests');
 
+
+-- -----------------------------------------------------------------------
+-- NEW CPRA RULES (added by CPRA, effective January 1, 2023)
+-- -----------------------------------------------------------------------
+
+-- Section 1798.106 - NEW: Right to Correct (CPRA addition)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.106', 'CCPA', '§1798.106(a)', 
+'Right to Correct Inaccurate Personal Information',
+'A consumer shall have the right to request a business that maintains inaccurate personal information about the consumer to correct that inaccurate personal information, taking into account the nature of the personal information and the purposes of the processing of the personal information. A business that collects personal information about consumers shall disclose the consumer''s right to request correction of inaccurate personal information. Upon receiving a verifiable consumer request, a business shall use commercially reasonable efforts to correct the inaccurate personal information within 45 days.',
+2500.00, 7500.00, 'All businesses collecting personal information');
+
+-- Section 1798.120 - NEW: Right to Opt-Out of SHARING (cross-context behavioral advertising — CPRA addition)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.120b', 'CCPA', '§1798.120(a) + §1798.140(ah)', 
+'Right to Opt-Out of Sharing for Cross-Context Behavioral Advertising',
+'CPRA expanded the right to opt-out to cover not just "sale" of personal information but also "sharing," defined as disclosing, making available, or transferring a consumer''s personal information to a third party for cross-context behavioral advertising, whether or not for monetary or other valuable consideration. Businesses must honor opt-out requests for sharing just as they honor opt-out requests for sale. The "Do Not Sell or Share My Personal Information" link must cover both.',
+2500.00, 7500.00, 'All businesses sharing data for behavioral advertising');
+
+-- Section 1798.135(c) - NEW: "Limit the Use of My Sensitive Personal Information" Link Required
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.135c', 'CCPA', '§1798.135(c)', 
+'Must Provide "Limit the Use of My Sensitive Personal Information" Link',
+'A business that uses or discloses a consumer''s sensitive personal information for purposes other than those authorized by Section 1798.121(a) shall provide a clear and conspicuous link on the business''s homepage titled "Limit the Use of My Sensitive Personal Information" that enables consumers to exercise their right to limit such use. This link may be combined with the "Do Not Sell or Share" link if clearly labeled.',
+2500.00, 7500.00, 'Businesses using sensitive personal information beyond authorized purposes');
+
+-- Section 1798.100(a)(3) - NEW: Data Minimization and Retention Limits (CPRA addition)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.100a3', 'CCPA', '§1798.100(a)(3)', 
+'Data Collection Must Be Reasonably Necessary and Proportionate — Data Minimization',
+'A business''s collection, use, retention, and sharing of a consumer''s personal information shall be reasonably necessary and proportionate to achieve the purposes for which the personal information was collected or processed, or for another disclosed purpose that is compatible with the context in which the personal information was collected, and not further processed in a manner incompatible with those purposes.',
+2500.00, 7500.00, 'All businesses collecting personal information');
+
+-- Section 1798.100(a)(1) — NEW: Retention Period Disclosure Required (CPRA addition)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.100a1', 'CCPA', '§1798.100(a)(1)', 
+'Must Disclose Retention Period for Each Category of Personal Information',
+'At or before the point of collection, a business shall inform consumers of the length of time the business intends to retain each category of personal information collected, including sensitive personal information, or if it is not possible to provide a specific timeframe, the criteria used to determine the retention period. Personal information shall not be retained longer than is reasonably necessary for the disclosed purpose.',
+2500.00, 7500.00, 'All businesses collecting personal information');
+
+-- Section 1798.150 - NEW: Private Right of Action for Data Breaches includes additional data types
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.150', 'CCPA', '§1798.150(a)', 
+'Private Right of Action for Unauthorized Disclosure of Personal Information',
+'Any consumer whose nonencrypted or nonredacted personal information, including email address in combination with a password or security question and answer that would permit access to the account, is subject to an unauthorized access, exfiltration, theft, or disclosure as a result of the business''s violation of the duty to implement and maintain reasonable security procedures and practices may bring a civil action for statutory damages between $100 and $750 per consumer per incident, or actual damages, whichever is greater.',
+100.00, 750.00, 'All businesses holding consumer personal information');
+
+-- Section 1798.199.90 - NEW: No 30-Day Cure Period (CPRA eliminated it)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.199.90', 'CCPA', '§1798.199.90', 
+'No Automatic 30-Day Cure Period for Violations',
+'The California Privacy Protection Agency (CPPA) has full discretion on whether to offer a cure period before issuing fines. Unlike the original CCPA which required a mandatory 30-day cure period before any enforcement action could be taken, the CPRA eliminated this automatic cure period effective January 1, 2023. The Agency may consider a cure period at its discretion but is not required to provide one.',
+2500.00, 7500.00, 'All businesses subject to CCPA enforcement');
+
+-- Section 1798.140(ae) - NEW: Sensitive Personal Information Full Definition (CPRA addition)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.140ae', 'CCPA', '§1798.140(ae)', 
+'Definition of Sensitive Personal Information — Complete CPRA Categories',
+'"Sensitive personal information" means personal information that reveals: (1) Social security, driver''s license, state identification card, or passport number; (2) Account log-in credentials (username/email + password or security question); (3) Financial account number, debit/credit card number in combination with access code; (4) Precise geolocation (within 1,850 feet radius); (5) Racial or ethnic origin, religious or philosophical beliefs, or union membership; (6) Contents of consumer''s mail, email, and text messages unless the business is the intended recipient; (7) Genetic data; (8) Biometric information processed to uniquely identify a consumer; (9) Personal information collected and analyzed concerning a consumer''s health; (10) Personal information collected and analyzed concerning a consumer''s sex life or sexual orientation; (11) Personal information of consumers known to be under 16 years old.',
+2500.00, 7500.00, 'All businesses collecting sensitive personal information');
+
+-- Section 1798.140(ae) - NEW: Definition of "Sharing" (cross-context behavioral advertising)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.140ah', 'CCPA', '§1798.140(ah)', 
+'Definition of Sharing of Personal Information',
+'"Share," "shared," or "sharing" means sharing, renting, releasing, disclosing, disseminating, making available, transferring, or otherwise communicating orally, in writing, or by electronic or other means, a consumer''s personal information by the business to a third party for cross-context behavioral advertising, whether or not for monetary or other valuable consideration, including transactions between a business and a third party for cross-context behavioral advertising for the benefit of a business in which no money is exchanged.',
+NULL, NULL, 'Definitional — applies to all businesses sharing data for advertising');
+
+-- Section 1798.185(a)(15) — NEW: Cybersecurity Audit Requirement (effective January 1, 2026)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.185a15', 'CCPA', '§1798.185(a)(15)', 
+'Annual Cybersecurity Audit Required for High-Risk Businesses',
+'Businesses whose processing of personal information presents significant risk to consumers'' privacy or security are required to conduct annual independent cybersecurity audits and submit risk assessments on a regular basis to the California Privacy Protection Agency. This applies to businesses that: derive 50% or more of annual revenues from selling or sharing personal information; or process personal information of 250,000 or more consumers. Effective January 1, 2026 per CPPA final regulations adopted July 24, 2025.',
+2500.00, 7500.00, 'Businesses with high-risk data processing — effective January 1, 2026');
+
+-- Section 1798.185(a)(16) — NEW: Risk Assessment Requirement (effective January 1, 2026)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.185a16', 'CCPA', '§1798.185(a)(16)', 
+'Privacy Risk Assessment Required for High-Risk Processing Activities',
+'Businesses that engage in processing activities that present a significant risk to consumers'' privacy or security must conduct and document risk assessments prior to undertaking such activities. High-risk processing includes: selling or sharing personal information; processing sensitive personal information; processing personal information for targeted advertising or profiling; and using automated decision-making technology. Risk assessments must be submitted to the CPPA upon request. Effective January 1, 2026.',
+2500.00, 7500.00, 'Businesses conducting high-risk processing activities — effective January 1, 2026');
+
+-- Section 1798.185(a)(21) — NEW: Automated Decision-Making Technology (ADMT) Opt-Out Right
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.185a21', 'CCPA', '§1798.185(a)(21)', 
+'Right to Opt-Out of Automated Decision-Making Technology (ADMT)',
+'Businesses using automated decision-making technology (ADMT) — including AI and profiling systems — for decisions that produce legal or similarly significant effects concerning consumers in areas such as education, employment, housing, credit, healthcare, or insurance must: (1) Provide a "pre-use notice" informing consumers before ADMT is applied to them; (2) Allow consumers to opt-out of ADMT for significant decisions; (3) Upon request, provide a plain-language explanation of how the ADMT works and the basis for any decision made. Effective January 1, 2026 per CPPA final regulations.',
+2500.00, 7500.00, 'Businesses using AI or automated decision-making — effective January 1, 2026');
+
+-- Section 1798.199.90 penalties — Children's Data Higher Penalty
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.199.90b', 'CCPA', '§1798.199.90(b)', 
+'Tripled Penalties for Violations Involving Personal Information of Minors Under 16',
+'Any intentional violation of the CCPA, or any violation involving the personal information of consumers known to be under 16 years of age, is subject to a civil penalty of up to $7,500 per violation. Each consumer whose rights are violated may give rise to a separate violation. There is no automatic cure period for violations involving minors.',
+7500.00, 7500.00, 'All businesses — mandatory higher penalty for children''s data violations');
+
+-- Section 1798.135(b)(2) — NEW: GPC Opt-Out Confirmation Required
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.135b2', 'CCPA', '§1798.135(b)(2)', 
+'Must Confirm That GPC Opt-Out Signal Has Been Processed',
+'When a business receives a valid Global Privacy Control (GPC) opt-out signal, it must not only honor the request but must be capable of confirming to consumers that their opt-out preference has been recognized and processed. A business shall not require a consumer to create an account in order to make a verifiable consumer request or to have their GPC signal honored.',
+2500.00, 7500.00, 'All businesses collecting personal information online');
+
+-- Section 1798.115 — Right to Know What Personal Information is SOLD or SHARED and to Whom
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.115', 'CCPA', '§1798.115(a)', 
+'Right to Know What Personal Information is Sold or Shared and to Whom',
+'A consumer shall have the right to request that a business that sells or shares the consumer''s personal information, or that discloses it for a business purpose, disclose to that consumer: (1) The categories of personal information that the business collected about the consumer. (2) The categories of personal information that the business sold or shared about the consumer and the categories of third parties to whom the personal information was sold or shared, by category or categories of personal information for each category of third parties to whom the personal information was sold or shared. (3) The categories of personal information that the business disclosed about the consumer for a business purpose and the categories of persons to whom it was disclosed for a business purpose.',
+2500.00, 7500.00, 'All businesses that sell or share personal information');
+
+-- Section 1798.110 — Right to Access (full access right including portable format)
+INSERT INTO compliance_rules VALUES 
+('CCPA-1798.110', 'CCPA', '§1798.110(a)', 
+'Right to Access Personal Information in Portable Format',
+'A consumer shall have the right to request that a business that collects personal information about the consumer disclose to the consumer, free of charge: the categories and specific pieces of personal information the business has collected, the sources, the business or commercial purpose, and the third parties. If the consumer''s request is made electronically, the business shall provide the information in a portable and, to the extent technically feasible, readily useable format that allows the consumer to transmit this information to another entity without hindrance.',
+2500.00, 7500.00, 'All businesses collecting personal information');
+
+-- Data Broker Registry (SB 362, signed October 2023 — operative January 1, 2024)
+INSERT INTO compliance_rules VALUES 
+('CCPA-SB362', 'CCPA', 'Civil Code §1798.99.80 (SB 362)', 
+'Data Brokers Must Register and Honor Single Deletion Request',
+'All data brokers must annually register with the California Privacy Protection Agency and pay a registration fee. By January 1, 2026, the CPPA shall establish a single "Delete Request" mechanism enabling consumers to submit one request to delete their personal information from ALL registered data brokers simultaneously. Data brokers that fail to register or comply with deletion requests are subject to civil penalties. A "data broker" means a business that knowingly collects and sells to third parties the personal information of a consumer with whom the business does not have a direct relationship.',
+200.00, 7500.00, 'All businesses that qualify as data brokers under SB 362');
+
+
 -- ============================================================================
--- GDPR OFFICIAL RULES
+-- GDPR OFFICIAL RULES (unchanged — still fully valid)
 -- Source: Regulation (EU) 2016/679
 -- Official URL: https://eur-lex.europa.eu/eli/reg/2016/679/oj
 -- ============================================================================
@@ -267,5 +399,22 @@ INSERT INTO compliance_rules VALUES
 'The storing of information, or the gaining of access to information already stored, in the terminal equipment of a subscriber or user is only allowed on condition that the subscriber or user concerned has given his or her consent, having been provided with clear and comprehensive information, in accordance with Directive 95/46/EC, inter alia, about the purposes of the processing. This shall not prevent any technical storage or access for the sole purpose of carrying out the transmission of a communication over an electronic communications network, or as strictly necessary in order for the provider of an information society service explicitly requested by the subscriber or user to provide the service.',
 NULL, NULL, 'All websites using cookies or similar technologies');
 
-select * from compliance_rules;
-select count(*) from compliance_rules;
+
+-- ============================================================================
+-- VERIFICATION QUERIES
+-- ============================================================================
+
+SELECT 
+    regulation_id,
+    COUNT(*) AS total_rules
+FROM compliance_rules
+GROUP BY regulation_id;
+
+SELECT * FROM compliance_rules ORDER BY regulation_id, rule_id;
+
+SELECT COUNT(*) AS grand_total FROM compliance_rules;
+
+-- Expected output:
+-- CCPA: ~21 rules (10 original + 11 new CPRA additions)
+-- GDPR: 19 rules (unchanged)
+-- Grand total: ~40 rules
