@@ -97,6 +97,6 @@ PII_PATTERNS = {
 # ── LLM Models ─────────────────────────────────────────────────
 # Claude  : best for long document reading (privacy policy)
 # GPT-4o  : best for structured JSON output (violation classification)
-CLAUDE_MODEL   = "claude-sonnet-4-20250514"
+CLAUDE_MODEL   = "claude-3-5-haiku-20241022"
 OPENAI_MODEL   = "gpt-4o"
 LLM_MAX_TOKENS = 1500

@@ -17,7 +17,7 @@ apo/dist/
 
 # APO output files (runtime artifacts)
 output/
-*.json
+
 *.jsonl
 
 # macOS
