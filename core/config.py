@@ -22,6 +22,9 @@ if _env_path.exists():
 OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY  = os.getenv("ANTHROPIC_API_KEY", "")
 
+# ── Security ───────────────────────────────────────────────────
+# Token matching is handled statically in core/security.py
+
 # ── Target ─────────────────────────────────────────────────────
 ROOT_URL           = "https://www.cpchem.com"
 JURISDICTION       = "CCPA"          # "CCPA" or "GDPR"

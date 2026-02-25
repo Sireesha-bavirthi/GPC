@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Download, FileJson, Database, GitBranch, FileText, CheckCircle2, Clock } from "lucide-react";
 
 const BACKEND = "http://localhost:8000";
+const TOKEN = "fake-token-for-testing-123";
 
 interface DownloadFile {
   label: string;
@@ -79,7 +80,9 @@ interface DownloadSectionProps {
 const DownloadSection = ({ isComplete, scanId }: DownloadSectionProps) => {
   const handleDownload = async (filename: string) => {
     try {
-      const res = await fetch(`${BACKEND}/api/download/${filename}`);
+      const res = await fetch(`${BACKEND}/api/download/${filename}`, {
+        headers: { "Authorization": `Bearer ${TOKEN}` }
+      });
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -119,8 +122,8 @@ const DownloadSection = ({ isComplete, scanId }: DownloadSectionProps) => {
           <div className="flex items-center gap-2 mb-1">
             <span
               className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${SCAN_SUMMARY.verdict === "NON-COMPLIANT"
-                  ? "bg-red-500/20 text-red-400"
-                  : "bg-emerald-500/20 text-emerald-400"
+                ? "bg-red-500/20 text-red-400"
+                : "bg-emerald-500/20 text-emerald-400"
                 }`}
             >
               {SCAN_SUMMARY.verdict}

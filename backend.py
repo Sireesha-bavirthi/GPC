@@ -24,10 +24,12 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 import uvicorn
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+
+from core import security, config
 
 # ── Supabase integration (non-blocking, optional) ─────────────────────────────
 try:
@@ -278,8 +280,9 @@ def _run_scan(scan_id: str, req: ScanRequest):
 
 
 # ── API routes ─────────────────────────────────────────────────────────────────
+
 @app.post("/api/scan")
-def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
+def start_scan(req: ScanRequest, background_tasks: BackgroundTasks, current_user: str = Depends(security.get_current_user)):
     scan_id = str(uuid.uuid4())[:8]
     SCANS[scan_id] = {
         "status": "pending",
@@ -301,7 +304,7 @@ def start_scan(req: ScanRequest, background_tasks: BackgroundTasks):
 
 
 @app.get("/api/status/{scan_id}")
-def get_status(scan_id: str):
+def get_status(scan_id: str, current_user: str = Depends(security.get_current_user)):
     if scan_id not in SCANS:
         raise HTTPException(404, "Scan not found")
     scan = SCANS[scan_id]
@@ -316,7 +319,7 @@ def get_status(scan_id: str):
 
 
 @app.get("/api/stream/{scan_id}")
-async def stream_events(scan_id: str):
+async def stream_events(scan_id: str, current_user: str = Depends(security.get_current_user)):
     """Server-Sent Events — streams log lines as they arrive."""
     if scan_id not in SCANS:
         raise HTTPException(404, "Scan not found")
@@ -345,7 +348,7 @@ async def stream_events(scan_id: str):
 
 
 @app.get("/api/results/{scan_id}")
-def get_results(scan_id: str):
+def get_results(scan_id: str, current_user: str = Depends(security.get_current_user)):
     if scan_id not in SCANS:
         raise HTTPException(404, "Scan not found")
     scan = SCANS[scan_id]
@@ -355,7 +358,7 @@ def get_results(scan_id: str):
 
 
 @app.get("/api/graph/{scan_id}")
-def get_interaction_graph(scan_id: str):
+def get_interaction_graph(scan_id: str, current_user: str = Depends(security.get_current_user)):
     """Fetch interaction_graph.json for a scan from Supabase Storage."""
     if SUPABASE_ENABLED:
         try:
@@ -371,7 +374,7 @@ def get_interaction_graph(scan_id: str):
 
 
 @app.get("/api/violations/{scan_id}")
-def get_violations(scan_id: str):
+def get_violations(scan_id: str, current_user: str = Depends(security.get_current_user)):
     """Fetch all violations for a scan from Supabase DB."""
     if SUPABASE_ENABLED:
         try:
@@ -392,7 +395,7 @@ def get_violations(scan_id: str):
 
 
 @app.get("/api/download/{filename}")
-def download_file(filename: str):
+def download_file(filename: str, current_user: str = Depends(security.get_current_user)):
     # Security: only allow known output files
     allowed = {
         "evidence_report.json",
@@ -412,7 +415,7 @@ def download_file(filename: str):
 
 
 @app.get("/health")
-def health():
+def health(current_user: str = Depends(security.get_current_user)):
     return {"status": "ok", "version": "2.0"}
 
 

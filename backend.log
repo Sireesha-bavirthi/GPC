@@ -1,0 +1,14 @@
+INFO:     Will watch for changes in these directories: ['/Users/sireeshabavirthi/Documents/apo-v2']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [88098] using StatReload
+Starting APO v2 Backend on http://localhost:8000
+INFO:     Started server process [88214]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:53743 - "GET /api/status/123 HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53745 - "GET /api/status/123 HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:53747 - "GET /api/status/123 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54813 - "GET /api/status/some-scan-id HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55830 - "GET /api/status/some-scan-id HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:56204 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58175 - "GET /health HTTP/1.1" 200 OK
