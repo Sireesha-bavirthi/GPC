@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - apo-v2
+  workflow_dispatch: # This allows you to run it manually from the GitHub website!
 
 jobs:
   build-and-push:
