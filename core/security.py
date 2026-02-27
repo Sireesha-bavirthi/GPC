@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
-# OAuth2 scheme for extracting the token from the request
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
+# HTTPBearer scheme tells Swagger UI we just want a simple Bearer Token
+security_scheme = HTTPBearer()
 
 class Token(BaseModel):
     access_token: str
@@ -24,8 +24,9 @@ def _load_static_token() -> str:
     except Exception:
         return ""
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)):
     """FastAPI dependency to validate requests against the static token."""
+    token = credentials.credentials
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
