@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Download, FileJson, Database, GitBranch, FileText, CheckCircle2, Clock } from "lucide-react";
 
-const BACKEND = "http://localhost:8000";
+const BACKEND = "https://d2rh3h60ye9e31.cloudfront.net";
 const TOKEN = "fake-token-for-testing-123";
 
 interface DownloadFile {
