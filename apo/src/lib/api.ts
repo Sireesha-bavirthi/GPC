@@ -3,7 +3,7 @@
  * Connects the React frontend to the FastAPI backend at http://localhost:8000
  */
 
-const BASE = "http://localhost:8000";
+const BASE = "https://d2rh3h60ye9e31.cloudfront.net";
 const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc3MjQ1ODMxMX0.4R6BiFuxZvDbzZNEwr55C6FZ04pwIF920XvYkLCN3Qo";
 
 const _authHeaders = {
