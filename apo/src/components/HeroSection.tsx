@@ -21,17 +21,16 @@ const HeroSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 glass-card text-sm text-muted-foreground">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Enterprise Privacy Compliance Platform
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 glass-card text-sm text-muted-foreground border border-primary/20 bg-primary/5 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+            Next-Generation Privacy Compliance
           </div>
           <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-4">
             <span className="gradient-text">APO</span>{" "}
             <span className="text-foreground">FRAMEWORK</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Autonomous Privacy Observability — AI-powered compliance scanning
-            across GDPR, CCPA, and global privacy regulations.
+            Autonomous Privacy Observability — Secure, AI-driven compliance scanning to safeguard your platform against GDPR, CCPA, and global privacy regulations.
           </p>
         </motion.div>
 
