@@ -24,18 +24,19 @@ def _load_static_token() -> str:
     except Exception:
         return ""
 
-from fastapi import Query, Request
-def get_current_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
-    token_query: str | None = Query(None, alias="token")
-):
+from fastapi import Request
+def get_current_user(request: Request):
     """FastAPI dependency to validate requests against the static token."""
     token = ""
-    if credentials:
-        token = credentials.credentials
-    elif token_query:
-        token = token_query
+    
+    # 1. Check Authorization header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+    
+    # 2. Check query parameter (for EventSource)
+    if not token:
+        token = request.query_params.get("token", "")
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
