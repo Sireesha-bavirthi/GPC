@@ -1,8 +1,6 @@
 import { motion } from "framer-motion";
 import { Download, FileJson, Database, GitBranch, FileText, CheckCircle2, Clock } from "lucide-react";
-
-const BACKEND = "https://d2rh3h60ye9e31.cloudfront.net";
-const TOKEN = "fake-token-for-testing-123";
+import { downloadUrl } from "../lib/api";
 
 interface DownloadFile {
   label: string;
@@ -80,24 +78,14 @@ interface DownloadSectionProps {
 const DownloadSection = ({ isComplete, scanId }: DownloadSectionProps) => {
   const handleDownload = async (filename: string) => {
     try {
-      const res = await fetch(`${BACKEND}/api/download/${filename}`, {
-        headers: { "Authorization": `Bearer ${TOKEN}` }
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        return;
-      }
-    } catch {
-      // backend not available
+      const url = downloadUrl(filename);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+    } catch (e) {
+      alert(`Download failed: ${e}`);
     }
-    // Fallback: tell user to start backend
-    alert(`Backend not reachable. Start the backend with:\ncd apo_v2 && python backend.py`);
   };
 
   return (
