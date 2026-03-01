@@ -327,21 +327,30 @@ async def stream_events(scan_id: str, current_user: str = Depends(security.get_c
     async def event_generator() -> AsyncGenerator[str, None]:
         sent = 0
         scan = SCANS[scan_id]
+        last_yield_time = time.time()
         while True:
             events = scan["events"]
             while sent < len(events):
                 ev = events[sent]
                 sent += 1
                 yield f"data: {json.dumps(ev)}\n\n"
+                last_yield_time = time.time()
             if scan["status"] in ("complete", "error"):
                 # Flush remaining
                 while sent < len(scan["events"]):
                     ev = scan["events"][sent]
                     sent += 1
                     yield f"data: {json.dumps(ev)}\n\n"
+                    last_yield_time = time.time()
                 # Send terminal event
                 yield f"data: {json.dumps({'agent':'system','level':'DONE','msg':scan['status'],'timestamp':''})}\n\n"
                 break
+            
+            # Keep-alive to prevent CloudFront / NGINX from dropping HTTP/2 streams
+            if time.time() - last_yield_time > 10:
+                yield ": keepalive\n\n"
+                last_yield_time = time.time()
+                
             await asyncio.sleep(0.3)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
