@@ -287,8 +287,12 @@ Respond as a JSON array matching the input order:
 
         for i, v in enumerate(violations):
             if i < len(parsed):
-                v["llm_explanation"]  = parsed[i].get("plain_english", "")
-                v["llm_technical_fix"]= parsed[i].get("technical_fix", "")
+                if isinstance(parsed[i], dict):
+                    v["llm_explanation"]  = parsed[i].get("plain_english", "")
+                    v["llm_technical_fix"]= parsed[i].get("technical_fix", "")
+                else:
+                    v["llm_explanation"]  = str(parsed[i])
+                    v["llm_technical_fix"]= ""
         return violations
 
     except Exception as e:
