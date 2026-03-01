@@ -197,10 +197,14 @@ const Index = () => {
       <ScanForm onStartScan={handleStartScan} isScanning={state.isScanning} backendAlive={state.useBackend} />
       <AgentCards isScanning={state.isScanning} scanProgress={scanProgress} agentProgress={state.agentProgress} />
       <TerminalLog isScanning={state.isScanning} scanProgress={scanProgress} logs={state.logs} />
-      <MetricsDashboard isComplete={state.isComplete} result={state.result} />
-      <ViolationsTable isComplete={state.isComplete} result={state.result} />
-      <ArchitectureFlowchart />
-      <DownloadSection isComplete={state.isComplete} scanId={state.scanId} />
+      {state.isComplete && (
+        <>
+          <MetricsDashboard isComplete={state.isComplete} result={state.result} />
+          <ViolationsTable isComplete={state.isComplete} result={state.result} />
+          <ArchitectureFlowchart />
+          <DownloadSection isComplete={state.isComplete} scanId={state.scanId} />
+        </>
+      )}
 
       <footer className="text-center py-8 text-xs text-muted-foreground border-t border-border">
         APO Framework v2 — Autonomous Privacy Observability
