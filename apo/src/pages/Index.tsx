@@ -21,6 +21,7 @@ interface ScanState {
   isScanning: boolean;
   isComplete: boolean;
   scanId: string | null;
+  scanTarget: string | null;
   agentProgress: AgentProgress;
   logs: LogEvent[];
   result: any | null;
@@ -32,6 +33,7 @@ const INITIAL: ScanState = {
   isScanning: false,
   isComplete: false,
   scanId: null,
+  scanTarget: null,
   agentProgress: { discovery: 0, interaction: 0, observability: 0 },
   logs: [],
   result: null,
@@ -94,7 +96,7 @@ const Index = () => {
     if (state.useBackend) {
       try {
         const scanId = await startScan(config);
-        setState((s) => ({ ...s, scanId }));
+        setState((s) => ({ ...s, scanId, scanTarget: config.url }));
         toast("Scan started", { description: `Scan ID: ${scanId} — streaming live from backend` });
 
         const cleanup = streamLogs(
@@ -202,7 +204,7 @@ const Index = () => {
           <MetricsDashboard isComplete={state.isComplete} result={state.result} />
           <ViolationsTable isComplete={state.isComplete} result={state.result} />
           <ArchitectureFlowchart />
-          <DownloadSection isComplete={state.isComplete} scanId={state.scanId} />
+          <DownloadSection isComplete={state.isComplete} scanId={state.scanId} targetUrl={state.scanTarget} result={state.result} />
         </>
       )}
 

@@ -60,22 +60,26 @@ const FILES: DownloadFile[] = [
   },
 ];
 
-// Scan summary stats — shown at top of section (from last run)
-const SCAN_SUMMARY = {
-  target: "www.cpchem.com",
-  verdict: "NON-COMPLIANT",
-  violations: 4,
-  pagesScanned: 13,
-  maxPenalty: "$30,000",
-  generatedAt: "Feb 20, 2026 · 17:11 IST",
-};
-
 interface DownloadSectionProps {
   isComplete: boolean;
   scanId: string | null;
+  targetUrl?: string | null;
+  result?: any | null;
 }
 
-const DownloadSection = ({ isComplete, scanId }: DownloadSectionProps) => {
+const DownloadSection = ({ isComplete, scanId, targetUrl, result }: DownloadSectionProps) => {
+  const vs = result?.violation_summary;
+  const ss = result?.session_summary;
+
+  const scanSummary = {
+    target: targetUrl || "Target Website",
+    verdict: result?.gpc_verdict?.verdict || "NON-COMPLIANT",
+    violations: vs?.total ?? 0,
+    pagesScanned: ss?.compliance_gpc_on?.pages_visited ?? ss?.baseline?.pages_visited ?? 0,
+    maxPenalty: `$${(vs?.max_potential_penalty_usd ?? 0).toLocaleString()}`,
+    generatedAt: new Date().toLocaleDateString() + " · " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  };
+
   const handleDownload = async (filename: string) => {
     try {
       const url = downloadUrl(filename);
@@ -103,18 +107,18 @@ const DownloadSection = ({ isComplete, scanId }: DownloadSectionProps) => {
       {/* Scan summary card */}
       <div
         className="glass-card p-5 mb-6 flex flex-wrap items-center gap-6 border"
-        style={{ borderColor: SCAN_SUMMARY.verdict === "NON-COMPLIANT" ? "rgba(239,68,68,0.25)" : "rgba(52,211,153,0.25)" }}
+        style={{ borderColor: scanSummary.verdict === "NON-COMPLIANT" ? "rgba(239,68,68,0.25)" : "rgba(52,211,153,0.25)" }}
       >
-        <div className="text-3xl">{SCAN_SUMMARY.verdict === "NON-COMPLIANT" ? "🚨" : "✅"}</div>
+        <div className="text-3xl">{scanSummary.verdict === "NON-COMPLIANT" ? "🚨" : "✅"}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span
-              className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${SCAN_SUMMARY.verdict === "NON-COMPLIANT"
+              className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${scanSummary.verdict === "NON-COMPLIANT"
                 ? "bg-red-500/20 text-red-400"
                 : "bg-emerald-500/20 text-emerald-400"
                 }`}
             >
-              {SCAN_SUMMARY.verdict}
+              {scanSummary.verdict}
             </span>
             {(isComplete || scanId) && (
               <span className="text-xs text-emerald-400 flex items-center gap-1">
@@ -122,22 +126,22 @@ const DownloadSection = ({ isComplete, scanId }: DownloadSectionProps) => {
               </span>
             )}
           </div>
-          <div className="font-semibold text-foreground">{SCAN_SUMMARY.target}</div>
+          <div className="font-semibold text-foreground">{scanSummary.target}</div>
           <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-            <Clock className="w-3 h-3" /> {SCAN_SUMMARY.generatedAt}
+            <Clock className="w-3 h-3" /> {scanSummary.generatedAt}
           </div>
         </div>
         <div className="flex gap-6 text-center shrink-0">
           <div>
-            <div className="text-2xl font-black text-red-400">{SCAN_SUMMARY.violations}</div>
+            <div className="text-2xl font-black text-red-400">{scanSummary.violations}</div>
             <div className="text-xs text-muted-foreground">Violations</div>
           </div>
           <div>
-            <div className="text-2xl font-black text-primary">{SCAN_SUMMARY.pagesScanned}</div>
+            <div className="text-2xl font-black text-primary">{scanSummary.pagesScanned}</div>
             <div className="text-xs text-muted-foreground">Pages</div>
           </div>
           <div>
-            <div className="text-2xl font-black text-yellow-400">{SCAN_SUMMARY.maxPenalty}</div>
+            <div className="text-2xl font-black text-yellow-400">{scanSummary.maxPenalty}</div>
             <div className="text-xs text-muted-foreground">Max Fine</div>
           </div>
         </div>
