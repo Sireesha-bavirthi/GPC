@@ -35,28 +35,4 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Force ECS Backend Service to redeploy with new image
-        run: |
-          aws ecs update-service \
-            --cluster ${{ secrets.AWS_ECS_CLUSTER }} \
-            --service ${{ secrets.AWS_ECS_BACKEND_SERVICE }} \
-            --force-new-deployment \
-            --region ${{ secrets.AWS_REGION }}
 
-      - name: Build, tag, and push Frontend Image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_FRONTEND_REPO }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f apo/Dockerfile ./apo
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-      - name: Force ECS Frontend Service to redeploy with new image
-        run: |
-          aws ecs update-service \
-            --cluster ${{ secrets.AWS_ECS_CLUSTER }} \
-            --service ${{ secrets.AWS_ECS_FRONTEND_SERVICE }} \
-            --force-new-deployment \
-            --region ${{ secrets.AWS_REGION }}
